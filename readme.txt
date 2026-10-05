@@ -2,7 +2,7 @@
 Contributors: rino
 Requires at least: 6.5
 Requires PHP: 8.0
-Stable tag: 0.1.1
+Stable tag: 0.1.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -10,16 +10,20 @@ One selected page: visits, page views, selected button clicks, successful Fluent
 Forms submissions, FluentPlayer play/end events and FluentCart live purchases.
 
 == Updates ==
-Published releases appear in the WordPress Plugins screen. The release publisher
-must be configured before distribution; no download location is enabled in this
-build yet. No client GitHub login or account token is required by the updater.
-HTTPS release information is cached for six hours, failures for fifteen minutes.
-Check for updates in Convertino to refresh immediately. Development commits and
-prerelease versions are not installed. Automatic updates follow the site's
-WordPress choice. Updates preserve Convertino settings and stored analytics.
-Before installation, the downloaded ZIP must match the offered release's SHA256.
-Checks send no analytics data or site URL; the host can see the server IP and
-Convertino updater version. See README.md in the source repo for publishing.
+Updates come directly from published releases in rinothecoder/convertino on
+GitHub, using the same site connection as Adminino. In wp-config.php, configure
+CONVERTINO_GITHUB_TOKEN with read-only Contents access to that repository, or
+use the existing MK_GITHUB_TOKEN if it can read Convertino. Never put tokens in
+the plugin, release ZIP, repository or frontend. Client users do not log in.
+Checks are cached for six hours, failures for fifteen minutes. Check for updates
+in Convertino to refresh immediately. Development commits, drafts and prerelease
+versions are not installed. Automatic updates follow the site's WordPress choice.
+The offered release is pinned to its Git commit, downloaded over HTTPS directly
+from GitHub, and checked for matching plugin/core version before installation.
+Updates preserve settings and analytics. Checks send no analytics records or site
+URL. GitHub receives the server token, server IP and updater version; temporary
+signed download links are requested only when installing and are not stored.
+See README.md in the source repository for setup and publishing.
 
 == Setup ==
 Open WordPress > Convertino. Select one published page, name buttons and supply

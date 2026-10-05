@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) { exit; }
 
 final class Convertino_Core {
     const COOKIE = 'convertino_session';
-    const VERSION = '0.1.1';
+    const VERSION = '0.1.2';
     public static function table($suffix) { global $wpdb; return $wpdb->prefix . 'convertino_' . $suffix; }
     public static function settings() {
         return wp_parse_args(get_option('convertino_settings', []), ['page_id'=>0, 'enabled'=>false, 'buttons'=>[], 'form_ids'=>[], 'product_ids'=>[]]);

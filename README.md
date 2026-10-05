@@ -5,7 +5,7 @@ traffic sources and conversions. Data stays on the website's own WordPress serve
 
 ## Current version
 
-The 0.1.1 build includes:
+The 0.1.2 build includes:
 
 - Page visits and page views, using short first-party sessions.
 - Named button selectors and click usage per source.
@@ -14,7 +14,7 @@ The 0.1.1 build includes:
 - FluentCart paid live orders and net revenue after refunds.
 - Basic FluentPlayer play and end events.
 - Consent gating, administrator exclusion and 180-day retention.
-- WordPress update notices, release details and checksum-verified update downloads.
+- Direct GitHub release updates using the site connection already used by Adminino.
 
 Tracking and storage checks passed on the development site. Real Fluent Forms,
 FluentCart and FluentPlayer workflows still need end-to-end testing with those
@@ -48,49 +48,59 @@ PHP sources should also pass `php -l`. WordPress and public HTTP checks were
 performed with disposable records on the development site; no test records are
 included in this repository.
 
-## Publishing updates
+## GitHub updates
 
-The source repository stays private. Client sites do not need GitHub accounts or
-tokens. The updater reads a small HTTPS `update.json` and downloads a published
-ZIP from the same publisher. For a GitHub publisher, ZIP URLs are restricted to
-release assets in that exact repository. Development branch ZIPs and prerelease
-version numbers are rejected. Updates use the WordPress Plugins screen and its
-normal auto-update choice; the plugin never enables auto-updates itself.
+Convertino uses published stable releases in this private repository, just like
+Adminino. It does not require a separate downloads site or update manifest.
+Saving commits does not update websites. Publishing a release makes it available
+in WordPress, where the site's normal auto-update choice controls installation.
+The plugin never enables automatic updates itself.
 
-The download location must be chosen before distribution. `MANIFEST_URL` in
-`includes-updates.php` is currently empty, so no external release checks happen.
-A site-specific publisher can also be supplied with the
-`convertino_update_manifest_url` filter. An empty or unavailable publisher does
-not interfere with analytics and never pretends an update succeeded.
+On each site, configure a fine-grained read-only token with **Contents: read**
+access to `rinothecoder/convertino`, in `wp-config.php` before the stop-editing line:
 
-To build a release, bump the plugin header, core version and readme stable tag,
-run the tests, then run:
-
-```sh
-python3 scripts/build-release.py --output /path/to/release \
-  --package-url https://YOUR-PUBLISHER/convertino-0.1.1.zip \
-  --homepage https://YOUR-PUBLISHER/ --tested 7.1.2
+```php
+define('CONVERTINO_GITHUB_TOKEN', 'YOUR_READ_ONLY_TOKEN');
 ```
 
-Publish the generated ZIP and `update.json` only after validating the build on
-the testing site. For GitHub, attach both to a stable release such as `v0.1.1`;
-the updater's manifest URL should use `releases/latest/download/update.json`,
-while the package URL must point to its specific version's ZIP. Never edit an
-already published release ZIP; create a new version instead. The allowlist
-builder excludes tests, scripts, local settings, credentials and analytics data.
+If Adminino's existing `MK_GITHUB_TOKEN` already has access to Convertino, it is
+used automatically and no additional configuration is needed. An explicitly
+configured `CONVERTINO_GITHUB_TOKEN` takes precedence. Do not share write access
+or embed an account token in a distributed ZIP, GitHub source or browser code.
+Codex/Claude account connections are separate from this site's update token.
 
-Release metadata is cached for six hours, failed checks for fifteen minutes.
-**Convertino → Plugin updates → Check for updates** refreshes it immediately.
-Before installation, the updater checks the exact ZIP against the SHA256 in the
-release WordPress offered; a later release cannot change that expected checksum.
-This detects corrupted or mismatched downloads, not a compromised publisher.
-WordPress handles installation and rollback. Analytics tables and settings are
-not deleted or reset by the updater.
+For a release, bump the plugin header, core version and readme stable tag to the
+same version, test on `https://plugins.testingwithpixels.com`, commit the tested
+source, then publish a GitHub Release with a matching tag such as **v0.1.3**.
+Drafts and prereleases are excluded. The release tag must contain the plugin
+files at the repository root. Do not move existing release tags; publish a new
+version instead. GitHub provides the archive itself, so no ZIP upload or separate
+hosting is required. The repository contains no analytics, settings or secrets.
 
-Checks contain no analytics records, site URL or account token. The publisher and
-its CDN can see the requesting server IP and updater version. A private download
-service requires its own access mechanism; this plugin does not embed a shared
-GitHub credential or provide a license server.
+For the first installation or a manual upgrade, build the installable ZIP with:
+
+```sh
+python3 scripts/build-release.py --output /path/to/release
+```
+
+The ZIP builder includes only runtime files and the license, and writes a SHA256
+file for manual verification. Direct GitHub updates download the published tag's
+source archive, pinned to the commit offered by WordPress. The updater checks
+plugin/core version and required files and keeps the `convertino` folder name.
+It does not claim a separate publisher signature or manifest checksum.
+
+Checks are cached for six hours, failures for fifteen minutes. Use
+**Convertino → Plugin updates → Check for updates** to refresh immediately.
+Missing tokens, denied repository access and unavailable releases are shown
+clearly and do not interrupt analytics. Settings and tables are never deleted
+or reset by the updater. WordPress handles installation and rollback.
+
+The server sends its configured read-only token only to the exact Convertino
+GitHub API endpoints, with automatic redirects disabled. The temporary GitHub
+archive redirect is checked and downloaded without forwarding the Authorization
+header. Update metadata contains no credentials or signed download URLs. Checks
+send no analytics records or site URL; GitHub sees the server IP and updater
+version. Other plugins' update and download requests are left unchanged.
 
 ## License
 
