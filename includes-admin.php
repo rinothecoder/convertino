@@ -3,10 +3,10 @@ if (!defined('ABSPATH')) { exit; }
 
 final class Convertino_Admin {
     public static function boot() {
-        add_action('admin_menu', function () { add_menu_page('Convertino','Convertino','manage_options','convertino',[__CLASS__,'screen'],'dashicons-chart-area',58); });
+        add_action('admin_menu', function () { add_menu_page('Convertino','Convertino','manage_options','convertino',[__CLASS__,'screen'],'data:image/svg+xml;base64,'.base64_encode(file_get_contents(__DIR__.'/assets/convertino-sidebar.svg')),58); });
         add_action('admin_enqueue_scripts', function ($hook) {
             if ($hook !== 'toplevel_page_convertino') { return; }
-            wp_enqueue_style('convertino-admin',plugins_url('assets/admin.css',CONVERTINO_FILE),[],Convertino_Core::VERSION);
+            wp_enqueue_style('convertino-admin',plugins_url('assets/admin.css',CONVERTINO_FILE),[],Convertino_Core::VERSION.'.'.filemtime(__DIR__.'/assets/admin.css'));
             wp_enqueue_script('convertino-admin',plugins_url('assets/admin.js',CONVERTINO_FILE),[],Convertino_Core::VERSION,true);
         });
         add_action('admin_post_convertino_save',[__CLASS__,'save']);
@@ -50,7 +50,8 @@ final class Convertino_Admin {
         $available = function ($prefix) use ($active) { foreach ($active as $p) { if (str_starts_with($p,$prefix.'/')) { return true; } } return false; };
         ?>
         <div class="wrap convertino">
-            <header class="convertino-header"><div><p class="convertino-brand">Convertino</p><h1>See what happens after the visit.</h1><p>One page. Its buttons, videos and conversions, compared by traffic source.</p></div><a class="button" href="#convertino-settings">Page setup</a></header>
+            <header class="convertino-header"><div class="convertino-brand"><img class="convertino-brand-icon" src="<?php echo esc_url(add_query_arg('ver',filemtime(__DIR__.'/assets/convertino-icon.svg'),plugins_url('assets/convertino-icon.svg',CONVERTINO_FILE))); ?>" width="32" height="32" alt="" aria-hidden="true"><h1>Convertino</h1></div><span class="convertino-header-note">By Rino de Boer</span></header>
+            <div class="convertino-content"><div class="convertino-page-heading"><div><h2>See what happens after the visit.</h2><p>One page. Its buttons, videos and conversions, compared by traffic source.</p></div><a class="button button-primary" href="#convertino-settings">Page setup</a></div>
             <?php if (!empty($_GET['saved'])): ?><div class="convertino-notice" role="status">Page setup saved. Previous results are preserved.</div><?php endif; ?>
             <?php if (!$s['enabled']): ?><div class="convertino-notice">Choose a page below and enable tracking to get started.</div><?php else: ?><div class="convertino-notice">Tracking <?php echo esc_html(get_the_title($s['page_id'])); ?> after analytics consent. Administrators and common bots are excluded.</div><?php endif; ?>
             <section class="convertino-section" aria-labelledby="convertino-overview"><div class="convertino-section-heading"><h2 id="convertino-overview">Page overview</h2><form method="get"><input type="hidden" name="page" value="convertino"><label for="report-page" class="screen-reader-text">Results for page</label><select id="report-page" name="report_page"><option value="0">Choose a page</option><?php foreach ($pages as $page): ?><option value="<?php echo (int)$page->ID; ?>" <?php selected($selected,$page->ID); ?>><?php echo esc_html($page->post_title); ?></option><?php endforeach; ?></select> <button class="button">View results</button></form></div>
@@ -81,6 +82,8 @@ final class Convertino_Admin {
                 <div class="convertino-consent"><h3>Consent and privacy</h3><p>Tracking waits for an analytics-consent signal. Connect your consent banner to <code>Convertino.setConsent(true)</code> when allowed, and <code>Convertino.setConsent(false)</code> when withdrawn. Complianz statistics consent is recognized automatically.</p><p>Uses a first-party session cookie, up to 30 minutes after activity. Data stays on this server for 180 days. No raw IP addresses, form answers, emails or visitor fingerprints are stored. Do Not Track and Global Privacy Control are respected. Local storage alone does not settle consent requirements.</p></div>
                 <button class="button button-primary convertino-save">Save page setup</button>
             </form></section>
+            <?php Convertino_Updates::screen(); ?>
+            </div>
         </div>
         <template id="convertino-button-template"><?php self::button_row(['label'=>'','selector'=>'']); ?></template>
         <?php
@@ -89,3 +92,4 @@ final class Convertino_Admin {
         <div class="convertino-button-row"><label>Button name<input type="text" name="button_label[]" maxlength="100" value="<?php echo esc_attr($button['label']); ?>" placeholder="Get started"></label><label>CSS selector<input type="text" name="button_selector[]" maxlength="300" value="<?php echo esc_attr($button['selector']); ?>" placeholder="#get-started"></label><button type="button" class="button convertino-remove-button">Remove button</button><span class="convertino-selector-error" role="status"></span></div>
     <?php }
 }
+
