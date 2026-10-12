@@ -28,3 +28,8 @@
 .convertino .button:focus-visible,.convertino input:focus-visible,.convertino select:focus-visible{outline:2px solid var(--cv-accent);outline-offset:3px;box-shadow:none}
 @media(max-width:782px){.convertino-header{margin-left:-10px;padding:18px}.convertino-header-note{display:none}.convertino-content{margin-top:24px;padding:0 12px 20px}.convertino-section{padding:22px 20px}.convertino-page-heading{align-items:flex-start;flex-wrap:wrap}.convertino-page-heading h2{font-size:23px}.convertino-connections li{flex-wrap:wrap}}
 @media(max-width:600px){.convertino-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.convertino-metric{padding:14px 12px}.convertino-section-heading{align-items:flex-start}.convertino-section-heading form{width:100%}.convertino-section-heading select{flex:1;min-width:0}}
+
+/* Admin notices: shown below the header, in the gray area. wp-header-end moves them there; hidden until then so nothing jumps. */
+body.toplevel_page_convertino #wpbody-content>div.notice,body.toplevel_page_convertino #wpbody-content>div.updated,body.toplevel_page_convertino #wpbody-content>div.error{display:none}
+.convertino>div.notice,.convertino>div.updated,.convertino>div.error{box-sizing:border-box;max-width:1144px;width:calc(100% - 112px);margin:24px auto 0}
+@media(max-width:782px){.convertino>div.notice,.convertino>div.updated,.convertino>div.error{width:calc(100% - 48px)}}

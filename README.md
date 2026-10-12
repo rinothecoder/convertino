@@ -5,7 +5,7 @@ traffic sources and conversions. Data stays on the website's own WordPress serve
 
 ## Current version
 
-The 0.1.2 build includes:
+The 0.1.3 build includes:
 
 - Page visits and page views, using short first-party sessions.
 - Named button selectors and click usage per source.
@@ -14,7 +14,7 @@ The 0.1.2 build includes:
 - FluentCart paid live orders and net revenue after refunds.
 - Basic FluentPlayer play and end events.
 - Consent gating, administrator exclusion and 180-day retention.
-- Direct GitHub release updates using the site connection already used by Adminino.
+- Direct public GitHub release updates without a site token.
 
 Tracking and storage checks passed on the development site. Real Fluent Forms,
 FluentCart and FluentPlayer workflows still need end-to-end testing with those
@@ -50,24 +50,13 @@ included in this repository.
 
 ## GitHub updates
 
-Convertino uses published stable releases in this private repository, just like
-Adminino. It does not require a separate downloads site or update manifest.
+Convertino uses published stable releases in this public repository. No GitHub
+token, Adminino connection, or wp-config.php change is needed. Existing site
+tokens are ignored by this updater.
+
 Saving commits does not update websites. Publishing a release makes it available
 in WordPress, where the site's normal auto-update choice controls installation.
 The plugin never enables automatic updates itself.
-
-On each site, configure a fine-grained read-only token with **Contents: read**
-access to `rinothecoder/convertino`, in `wp-config.php` before the stop-editing line:
-
-```php
-define('CONVERTINO_GITHUB_TOKEN', 'YOUR_READ_ONLY_TOKEN');
-```
-
-If Adminino's existing `MK_GITHUB_TOKEN` already has access to Convertino, it is
-used automatically and no additional configuration is needed. An explicitly
-configured `CONVERTINO_GITHUB_TOKEN` takes precedence. Do not share write access
-or embed an account token in a distributed ZIP, GitHub source or browser code.
-Codex/Claude account connections are separate from this site's update token.
 
 For a release, bump the plugin header, core version and readme stable tag to the
 same version, test on `https://plugins.testingwithpixels.com`, commit the tested
@@ -91,16 +80,15 @@ It does not claim a separate publisher signature or manifest checksum.
 
 Checks are cached for six hours, failures for fifteen minutes. Use
 **Convertino → Plugin updates → Check for updates** to refresh immediately.
-Missing tokens, denied repository access and unavailable releases are shown
+Unavailable repositories and releases are shown
 clearly and do not interrupt analytics. Settings and tables are never deleted
 or reset by the updater. WordPress handles installation and rollback.
 
-The server sends its configured read-only token only to the exact Convertino
-GitHub API endpoints, with automatic redirects disabled. The temporary GitHub
-archive redirect is checked and downloaded without forwarding the Authorization
-header. Update metadata contains no credentials or signed download URLs. Checks
-send no analytics records or site URL; GitHub sees the server IP and updater
-version. Other plugins' update and download requests are left unchanged.
+Public GitHub API and archive requests send no site cookies or credentials.
+The temporary archive redirect is checked before downloading. Update metadata
+contains no credentials or signed download URLs. Checks send no analytics
+records or site URL; GitHub sees the server IP and updater version. Other
+plugins' update and download requests are left unchanged.
 
 ## License
 

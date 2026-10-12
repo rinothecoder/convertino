@@ -1,7 +1,7 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
-/** Direct GitHub releases, using the site's connection as Adminino does. */
+/** Published public GitHub releases; no site token is required. */
 final class Convertino_Updates {
     const REPO = 'rinothecoder/convertino';
     const UPDATE_URI = 'https://github.com/rinothecoder/convertino/';
@@ -15,18 +15,11 @@ final class Convertino_Updates {
         add_filter('upgrader_source_selection', [__CLASS__, 'source'], 10, 4);
         add_action('admin_post_convertino_check_updates', [__CLASS__, 'check']);
     }
-    private static function token() {
-        // A dedicated connection can override Adminino's existing site connection.
-        if (defined('CONVERTINO_GITHUB_TOKEN')) { return trim((string) CONVERTINO_GITHUB_TOKEN); }
-        return defined('MK_GITHUB_TOKEN') ? trim((string) MK_GITHUB_TOKEN) : '';
-    }
-    private static function cache_key() {
-        return 'convertino_github_' . substr(hash('sha256', self::token()), 0, 20);
-    }
+    private static function cache_key() { return 'convertino_github_public_release'; }
     private static function args() {
         return ['timeout'=>15, 'redirection'=>0, 'limit_response_size'=>262144,
             'user-agent'=>'Convertino Updater/' . Convertino_Core::VERSION,
-            'headers'=>['Accept'=>'application/vnd.github+json', 'Authorization'=>'Bearer ' . self::token()], 'cookies'=>[]];
+            'headers'=>['Accept'=>'application/vnd.github+json'], 'cookies'=>[]];
     }
     private static function error($code, $message) { return new WP_Error('convertino_' . $code, $message); }
     private static function json($path) {
@@ -34,7 +27,7 @@ final class Convertino_Updates {
         if (is_wp_error($response)) { return self::error('github_unavailable', 'Could not reach GitHub. Tracking continues normally.'); }
         $code = (int) wp_remote_retrieve_response_code($response);
         if ($code === 401 || $code === 404) {
-            return self::error('github_access', 'The site’s GitHub connection cannot read Convertino. Give its token Contents: read access to rinothecoder/convertino.');
+            return self::error('github_access', 'The public Convertino repository is unavailable. Try again later.');
         }
         if ($code !== 200) { return self::error('github_unavailable', 'GitHub could not complete the check. Try again later.'); }
         $data = json_decode(wp_remote_retrieve_body($response), true);
@@ -51,16 +44,13 @@ final class Convertino_Updates {
             'changelog'=>nl2br(esc_html(substr((string)($data['body'] ?? ''), 0, 16000)))];
     }
     public static function release($force = false) {
-        if (!self::token()) {
-            return self::error('github_token', 'No GitHub connection is configured on this site. Add a read-only Convertino token in wp-config.php, or use Adminino’s MK_GITHUB_TOKEN connection.');
-        }
         $cached = $force ? false : get_site_transient(self::cache_key());
         if (is_array($cached)) { return $cached['release'] ?? self::error($cached['code'], $cached['error']); }
         $release = self::json('/releases/latest');
         if (is_wp_error($release) && $release->get_error_code() === 'convertino_github_access') {
-            // GitHub uses 404 for both a hidden repo and a repo without releases.
+            // GitHub returns 404 when there are no published releases.
             $repo = self::json('');
-            if (!is_wp_error($repo)) { $release = self::error('github_no_release', 'GitHub is connected. No published release yet.'); }
+            if (!is_wp_error($repo)) { $release = self::error('github_no_release', 'No published Convertino release yet.'); }
         }
         if (!is_wp_error($release)) {
             $tag = $release['tag_name'] ?? '';
@@ -102,7 +92,7 @@ final class Convertino_Updates {
         $updates = get_site_transient('update_plugins');
         return $updates->response[plugin_basename(CONVERTINO_FILE)] ?? null;
     }
-    /** Only this repository's pinned archive may receive the site's credential. */
+    /** Only the published release commit may be downloaded. */
     public static function package_allowed($url, $commit) {
         return is_string($commit) && preg_match('/^[a-f0-9]{40}$/D', $commit) && $url === self::API . '/zipball/' . $commit;
     }
@@ -117,17 +107,17 @@ final class Convertino_Updates {
     public static function download($reply, $package, $upgrader, $extra) {
         if (!self::own_update($extra) || is_wp_error($reply)) { return $reply; }
         $offered = self::offered();
-        if (!$offered || ($offered->package ?? '') !== $package || !self::token()
+        if (!$offered || ($offered->package ?? '') !== $package
             || !self::package_allowed($package, $offered->convertino_commit ?? '')) {
             return self::error('package_unverified', 'Check for Convertino updates again before installing.');
         }
         if (!version_compare($offered->new_version ?? '0', Convertino_Core::VERSION, '>')) {
             return self::error('package_old', 'This release is not newer than the installed version.');
         }
-        // Resolve a fresh signed archive URL. Never forward Authorization to a redirect.
+        // Resolve the archive without sending site credentials or cookies.
         $response = wp_safe_remote_get($package, self::args());
         if (is_wp_error($response) || (int)wp_remote_retrieve_response_code($response) !== 302) {
-            return self::error('package_unavailable', 'GitHub could not provide the update download. Check the site’s repository access.');
+            return self::error('package_unavailable', 'GitHub could not provide the update download. Try checking for updates again.');
         }
         $url = wp_remote_retrieve_header($response, 'location');
         if (!self::download_url_allowed($url, $offered->convertino_commit)) {
@@ -177,8 +167,7 @@ final class Convertino_Updates {
     public static function screen() {
         $cached = get_site_transient(self::cache_key());
         $release = is_array($cached) ? ($cached['release'] ?? null) : null;
-        $message = !self::token() ? 'No GitHub connection is configured on this site.'
-            : ($release ? (version_compare($release['version'], Convertino_Core::VERSION, '>') ? 'Version ' . $release['version'] . ' is available.' : 'You have the latest published version.')
+        $message = ($release ? (version_compare($release['version'], Convertino_Core::VERSION, '>') ? 'Version ' . $release['version'] . ' is available.' : 'You have the latest published version.')
                 : ($cached['error'] ?? 'Ready to check GitHub for published releases.'));
         ?>
         <section id="convertino-updates" class="convertino-section"><h2>Plugin updates</h2>
@@ -189,7 +178,7 @@ final class Convertino_Updates {
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"><input type="hidden" name="action" value="convertino_check_updates"><?php wp_nonce_field('convertino_check_updates'); ?><button class="button">Check for updates</button></form>
                 <?php if ($release && version_compare($release['version'], Convertino_Core::VERSION, '>')): ?><p><a class="button button-primary" href="<?php echo esc_url(admin_url('plugins.php')); ?>">Open Plugins to update</a></p><?php endif; ?>
             <?php endif; ?>
-            <p class="convertino-muted">This private repository needs a read-only token in wp-config.php: CONVERTINO_GITHUB_TOKEN, or Adminino’s existing MK_GITHUB_TOKEN with access to Convertino. The token stays on this server and is sent only to GitHub’s API. Update checks send no analytics records or site URL.</p>
+            <p class="convertino-muted">This public repository needs no GitHub token or wp-config.php changes. Existing site tokens are not used by Convertino.</p>
         </section>
         <?php
     }

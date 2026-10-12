@@ -43,8 +43,6 @@ function response($code, $body = '', $headers = []) { return ['response'=>['code
 $GLOBALS['cache']=[]; $GLOBALS['hooks']=[]; $GLOBALS['requests']=[]; $GLOBALS['responses']=[];
 Convertino_Updates::boot();
 expect(count($GLOBALS['hooks']) === 5, 'Five scoped hooks');
-expect(is_wp_error(Convertino_Updates::release()), 'Missing token shown explicitly');
-expect(count($GLOBALS['requests']) === 0, 'No credential means no network requests');
 define('MK_GITHUB_TOKEN', 'FAKE_TEST_TOKEN');
 $sha = str_repeat('a', 40); $api = Convertino_Updates::API;
 $release = ['tag_name'=>'v0.1.3','draft'=>false,'prerelease'=>false,'body'=>'<script>unsafe</script>'];
@@ -56,7 +54,8 @@ $offer = Convertino_Updates::update(false, [], 'convertino/convertino.php', []);
 expect($offer['version'] === '0.1.3' && $offer['convertino_commit'] === $sha, 'Published version pins commit');
 expect($offer['package'] === $api . '/zipball/' . $sha, 'Download immutable commit, never main');
 expect($GLOBALS['ttl'] === 21600, 'Success cached six hours');
-expect($GLOBALS['requests'][0][1]['headers']['Authorization'] === 'Bearer FAKE_TEST_TOKEN', 'Existing Adminino connection used');
+expect(empty($GLOBALS['requests'][0][1]['headers']['Authorization']), 'Public requests ignore an existing site token');
+expect(empty($GLOBALS['requests'][0][1]['cookies']), 'Public requests send no site cookies');
 expect($GLOBALS['requests'][0][1]['redirection'] === 0, 'API never auto-forwards token');
 expect($GLOBALS['requests'][0][1]['user-agent'] === 'Convertino Updater/0.1.2', 'No site URL in user agent');
 expect(!str_contains(json_encode($offer), 'FAKE_TEST_TOKEN'), 'No credential in WordPress offer');
@@ -121,9 +120,10 @@ $GLOBALS['responses'][$api.'/releases/latest']=new WP_Error('network','offline')
 expect(is_wp_error(Convertino_Updates::release(true)), 'Offline check fails safely');
 $before=count($GLOBALS['requests']); Convertino_Updates::release();
 expect(count($GLOBALS['requests'])===$before, 'Failure cache avoids hammering API');
-// Explicit dedicated connection overrides a shared site connection, including empty opt-out.
+// Old configured tokens, including empty overrides, do not affect public access.
 define('CONVERTINO_GITHUB_TOKEN', '');
-$before=count($GLOBALS['requests']);
-expect(is_wp_error(Convertino_Updates::release()), 'Dedicated empty token opts out');
-expect(count($GLOBALS['requests'])===$before, 'Empty override never uses shared token');
+$GLOBALS['responses'][$api.'/releases/latest']=response(200,json_encode($release));
+$GLOBALS['responses'][$api.'/commits/v0.1.3']=response(200,json_encode(['sha'=>$sha]));
+expect(!is_wp_error(Convertino_Updates::release(true)), 'Public access works with an empty legacy token');
+foreach ($GLOBALS['requests'] as $request) { expect(empty($request[1]['headers']['Authorization']), 'No request sends a legacy site token'); }
 echo "PASS: $count GitHub updater checks\n";

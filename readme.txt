@@ -2,7 +2,7 @@
 Contributors: rino
 Requires at least: 6.5
 Requires PHP: 8.0
-Stable tag: 0.1.2
+Stable tag: 0.1.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 
@@ -10,18 +10,16 @@ One selected page: visits, page views, selected button clicks, successful Fluent
 Forms submissions, FluentPlayer play/end events and FluentCart live purchases.
 
 == Updates ==
-Updates come directly from published releases in rinothecoder/convertino on
-GitHub, using the same site connection as Adminino. In wp-config.php, configure
-CONVERTINO_GITHUB_TOKEN with read-only Contents access to that repository, or
-use the existing MK_GITHUB_TOKEN if it can read Convertino. Never put tokens in
-the plugin, release ZIP, repository or frontend. Client users do not log in.
+Updates come directly from published releases in the public
+rinothecoder/convertino GitHub repository. No token, Adminino connection, or
+wp-config.php changes are required. Existing site tokens are not used.
 Checks are cached for six hours, failures for fifteen minutes. Check for updates
 in Convertino to refresh immediately. Development commits, drafts and prerelease
 versions are not installed. Automatic updates follow the site's WordPress choice.
 The offered release is pinned to its Git commit, downloaded over HTTPS directly
 from GitHub, and checked for matching plugin/core version before installation.
 Updates preserve settings and analytics. Checks send no analytics records or site
-URL. GitHub receives the server token, server IP and updater version; temporary
+URL. GitHub receives the server IP and updater version; temporary
 signed download links are requested only when installing and are not stored.
 See README.md in the source repository for setup and publishing.
 
@@ -81,3 +79,9 @@ the frontend for this reason. Cookie attribution applies only within this site
 and the short session. No retroactive attribution when consent was absent.
 Deactivation stops cleanup/tracking; it does not delete data. Uninstall does not
 delete data. No A/B testing, page versions, automatic winners or migration yet.
+
+== Changelog ==
+
+= 0.1.3 =
+* Public GitHub updates require no token or wp-config.php changes.
+* Preserve the existing admin notice placement fixes.

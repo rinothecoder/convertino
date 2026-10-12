@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Convertino
  * Description: Local page analytics, selected button clicks and conversion attribution.
- * Version: 0.1.2
+ * Version: 0.1.3
  * Author: Rino
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
